@@ -14,7 +14,7 @@ export const Avatar = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="h-9 w-9 rounded-full bg-[#EF4444] flex items-center justify-center cursor-pointer">
+        <button className="h-9 w-9 rounded-full bg-[#EF4444] flex items-center justify-center cursor-pointer outline-none">
           <Image src="/icons/avatar.svg" alt="avatar" width={16} height={16} />
         </button>
       </DropdownMenuTrigger>
@@ -22,7 +22,7 @@ export const Avatar = () => {
         align="center"
         side="bottom"
         sideOffset={8}
-        className="min-w-40 max-w-150 w-auto h-26 rounded-xl p-4"
+        className="min-w-40 max-w-150 w-auto h-27 rounded-xl p-4"
       >
         <DropdownMenuItem className="justify-center text-base font-medium h-9 cursor-pointer">
           <UserIcon />
