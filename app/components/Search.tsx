@@ -98,8 +98,8 @@ export const Search = () => {
       {isFocused && input && address.length > 0 && (
         <ScrollArea className="w-63 h-auto max-h-70 rounded-xl bg-white shadow-xl absolute top-2 left-0 z-50">
           <div className="p-4">
-            {address.map((add) => (
-              <React.Fragment key={add.id}>
+            {address.map((add, index) => (
+              <React.Fragment key={index}>
                 <div
                   className="text-xs text-[#09090B] font-normal cursor-pointer hover:bg-[#f8f8f8] transition duration-300"
                   onMouseDown={(e) => {

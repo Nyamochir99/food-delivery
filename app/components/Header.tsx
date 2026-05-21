@@ -5,9 +5,11 @@ import { LoggedIn } from "./LoggedIn";
 
 export const Header = ({ user }: { user: boolean }) => {
   return (
-    <div className="w-full py-3 px-22 flex justify-between items-center bg-[#18181B]">
-      <Logo isVertical={false} />
-      {user ? <LoggedIn /> : <Signup />}
+    <div className="flex justify-center w-full bg-[#18181B]">
+      <div className="w-7xl py-3 flex justify-between items-center">
+        <Logo isVertical={false} />
+        {user ? <LoggedIn /> : <Signup />}
+      </div>
     </div>
   );
 };

@@ -3,7 +3,9 @@ import React from "react";
 
 export const Logo = ({ isVertical }: { isVertical: boolean }) => {
   return (
-    <div className={`flex gap-3 items-center ${isVertical ? "flex-col" : ""}`}>
+    <div
+      className={`flex cursor-pointer gap-3 items-center ${isVertical ? "flex-col" : ""}`}
+    >
       <Image src="/icons/logo.svg" alt="Logo" width={46} height={38} />
       <div className="flex flex-col items-center">
         <div className="text-xl font-semibold text-[#FAFAFA]">
