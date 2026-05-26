@@ -21,7 +21,7 @@ export default function LoginPage() {
             className="w-full h-9 outline-none px-3 border border-[#E4E4E7] rounded-md placeholder:text-sm placeholder:text-[#71717A] placeholder:font-normal"
             placeholder="Enter your email address"
           />
-          <button className="h-9 2-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20">
+          <button className="h-9 2-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed">
             Let&apos;s Go
           </button>
           <div className="flex justify-center gap-3 text-base font-normal">
