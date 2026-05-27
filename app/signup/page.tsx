@@ -1,6 +1,25 @@
+"use client";
 import Image from "next/image";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const [isUser, setIsUser] = useState<boolean>(false);
+  const [email, setEmail] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+
+  const isEmailValid = (email: string) => {
+    if (email.trim() === "") {
+      setError("Мэйл хаягаа оруулна уу.");
+    } else if (
+      !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
+    ) {
+      setError("Зөв мейл хаяг оруулна уу.");
+    } else {
+      setError("");
+    }
+  };
+
   return (
     <div className="flex w-full h-screen justify-center items-center p-5">
       <div className="w-7xl flex gap-12 items-center h-full">
@@ -16,12 +35,34 @@ export default function LoginPage() {
               Sign up to explore your favorite dishes.
             </span>
           </div>
-          <input
-            type="text"
-            className="w-full h-9 outline-none px-3 border border-[#E4E4E7] rounded-md placeholder:text-sm placeholder:text-[#71717A] placeholder:font-normal"
-            placeholder="Enter your email address"
-          />
-          <button className="h-9 2-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed">
+          <div className="flex flex-col gap-2">
+            <input
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (isSubmitted) {
+                  isEmailValid(e.target.value);
+                }
+              }}
+              required={true}
+              type="text"
+              className={`w-full h-9 outline-none px-3 border rounded-md placeholder:text-sm placeholder:text-[#71717A] placeholder:font-normal ${error ? "border-[#EF4444]" : "border-[#E4E4E7]"}`}
+              placeholder="Enter your email address"
+            />
+            {error && (
+              <span className="text-sm font-normal text-[#EF4444]">
+                {error}
+              </span>
+            )}
+          </div>
+          <button
+            className="h-9 w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
+            disabled={error !== ""}
+            onClick={() => {
+              setIsSubmitted(true);
+              isEmailValid(email);
+            }}
+          >
             Let&apos;s Go
           </button>
           <div className="flex justify-center gap-3 text-base font-normal">
