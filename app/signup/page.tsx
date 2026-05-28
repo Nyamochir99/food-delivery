@@ -7,6 +7,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isValid, setIsValid] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [otp, setOtp] = useState("");
 
   const isEmailValid = (email: string) => {
     if (email.trim() === "") {
@@ -17,6 +20,11 @@ export default function LoginPage() {
       setError("Зөв мейл хаяг оруулна уу.");
     } else {
       setError("");
+    }
+  };
+  const handleSignup = () => {
+    if (error === "") {
+      setIsValid(true);
     }
   };
 
@@ -36,35 +44,46 @@ export default function LoginPage() {
             </span>
           </div>
           <div className="flex flex-col gap-2">
-            <input
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (isSubmitted) {
-                  isEmailValid(e.target.value);
-                }
-              }}
-              required={true}
-              type="text"
-              className={`w-full h-9 outline-none px-3 border rounded-md placeholder:text-sm placeholder:text-[#71717A] placeholder:font-normal ${error ? "border-[#EF4444]" : "border-[#E4E4E7]"}`}
-              placeholder="Enter your email address"
-            />
+            {isValid ? (
+              <></>
+            ) : (
+              <input
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (isSubmitted) {
+                    isEmailValid(e.target.value);
+                  }
+                }}
+                required={true}
+                type="text"
+                className={`w-full h-9 outline-none px-3 border rounded-md placeholder:text-sm placeholder:text-[#71717A] placeholder:font-normal ${error ? "border-[#EF4444]" : "border-[#E4E4E7]"}`}
+                placeholder="Enter your email address"
+              />
+            )}
             {error && (
               <span className="text-sm font-normal text-[#EF4444]">
                 {error}
               </span>
             )}
           </div>
-          <button
-            className="h-9 w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
-            disabled={error !== ""}
-            onClick={() => {
-              setIsSubmitted(true);
-              isEmailValid(email);
-            }}
-          >
-            Let&apos;s Go
-          </button>
+          {isValid ? (
+            <button className="h-9 w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed">
+              Confirm OTP
+            </button>
+          ) : (
+            <button
+              className="h-9 w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
+              disabled={error !== ""}
+              onClick={() => {
+                setIsSubmitted(true);
+                isEmailValid(email);
+                handleSignup();
+              }}
+            >
+              Let&apos;s Go
+            </button>
+          )}
           <div className="flex justify-center gap-3 text-base font-normal">
             <span className="text-[#71717A]">Already have an account?</span>
             <span className="text-[#2563EB] cursor-pointer">Log in </span>
