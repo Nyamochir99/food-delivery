@@ -1,13 +1,14 @@
 "use client";
 import Image from "next/image";
 import { useState } from "react";
+import { OtpInput } from "../components/OtpInput";
 
 export default function LoginPage() {
   const [isUser, setIsUser] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const [isValid, setIsValid] = useState(false);
+  const [isValid, setIsValid] = useState(true);
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
 
@@ -45,7 +46,7 @@ export default function LoginPage() {
           </div>
           <div className="flex flex-col gap-2">
             {isValid ? (
-              <></>
+              <OtpInput otp={otp} setOtp={setOtp} />
             ) : (
               <input
                 value={email}
