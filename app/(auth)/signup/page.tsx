@@ -1,10 +1,10 @@
 "use client";
 import Image from "next/image";
 import { useState } from "react";
-import { OtpInput } from "../components/OtpInput";
+import { OtpInput } from "../../components/OtpInput";
 
 export default function LoginPage() {
-  const [isUser, setIsUser] = useState<boolean>(false);
+  const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
