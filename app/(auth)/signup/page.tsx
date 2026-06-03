@@ -4,28 +4,29 @@ import { useState } from "react";
 import { OtpInput } from "../../components/OtpInput";
 
 export default function LoginPage() {
-  const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const [isValid, setIsValid] = useState(true);
+  const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
 
   const isEmailValid = (email: string) => {
     if (email.trim() === "") {
-      setError("Мэйл хаягаа оруулна уу.");
-    } else if (
-      !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
-    ) {
-      setError("Зөв мейл хаяг оруулна уу.");
-    } else {
-      setError("");
+      return "Мэйл хаягаа оруулна уу.";
     }
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+      return "Зөв мейл хаяг оруулна уу.";
+    }
+    return "";
   };
   const handleSignup = () => {
-    if (error === "") {
+    const signError = isEmailValid(email);
+    setError(signError);
+    if (signError === "") {
       setIsValid(true);
+    } else {
+      setIsValid(false);
     }
   };
 
@@ -33,7 +34,11 @@ export default function LoginPage() {
     <div className="flex w-full h-screen justify-center items-center p-5">
       <div className="w-7xl flex gap-12 items-center h-full">
         <div className="flex flex-col gap-6 w-104">
-          <button className="flex items-center justify-center h-9 w-9 border border-[#E4E4E7] rounded-md bg-white">
+          <button
+            disabled={isValid === false}
+            onClick={() => setIsValid(false)}
+            className="flex cursor-pointer items-center justify-center h-9 w-9 border border-[#E4E4E7] rounded-md bg-white disabled:opacity-0 disabled:cursor-auto"
+          >
             <Image src="/icons/back.svg" alt="back" width={16} height={16} />
           </button>
           <div className="flex flex-col gap-1">
@@ -53,7 +58,8 @@ export default function LoginPage() {
                 onChange={(e) => {
                   setEmail(e.target.value);
                   if (isSubmitted) {
-                    isEmailValid(e.target.value);
+                    const liveError = isEmailValid(e.target.value);
+                    setError(liveError);
                   }
                 }}
                 required={true}
@@ -69,7 +75,10 @@ export default function LoginPage() {
             )}
           </div>
           {isValid ? (
-            <button className="h-9 w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed">
+            <button
+              disabled={otp.length < 6}
+              className="h-9 w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
+            >
               Confirm OTP
             </button>
           ) : (
