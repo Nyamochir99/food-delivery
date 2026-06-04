@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { OtpInput } from "../../components/OtpInput";
+import axios from "axios";
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
+  // const {setAccessToken} = useUser();
 
   const isEmailValid = (email: string) => {
     if (email.trim() === "") {
@@ -20,15 +22,32 @@ export default function LoginPage() {
     }
     return "";
   };
-  const handleSignup = () => {
+  const handleSignup = async () => {
     const signError = isEmailValid(email);
     setError(signError);
-    if (signError === "") {
-      setIsValid(true);
-    } else {
+    if (signError !== "") {
       setIsValid(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await axios.post("/api/auth", { email });
+      setIsValid(true);
+      setLoading(false);
+      alert(response.data.message);
+    } catch (err) {
+      setIsValid(false);
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.message || "Алдаа гарлаа.");
+      } else {
+        alert("Something went wrong");
+      }
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleOtp = async () => {};
 
   return (
     <div className="flex w-full h-screen justify-center items-center p-5">
@@ -36,17 +55,22 @@ export default function LoginPage() {
         <div className="flex flex-col gap-6 w-104">
           <button
             disabled={isValid === false}
-            onClick={() => setIsValid(false)}
+            onClick={() => {
+              setIsValid(false);
+              setOtp("");
+            }}
             className="flex cursor-pointer items-center justify-center h-9 w-9 border border-[#E4E4E7] rounded-md bg-white disabled:opacity-0 disabled:cursor-auto"
           >
             <Image src="/icons/back.svg" alt="back" width={16} height={16} />
           </button>
           <div className="flex flex-col gap-1">
             <span className="font-semibold text-[#09090B] text-2xl">
-              Create your account
+              {isValid ? "Enter verification code" : "Welcome back"}
             </span>
             <span className="text-base font-normal text-[#71717A]">
-              Sign up to explore your favorite dishes.
+              {isValid
+                ? `We sent a 6-digit code to your email. Please check your email.`
+                : "Log in or sign up to explore your favorite dishes."}
             </span>
           </div>
           <div className="flex flex-col gap-2">
@@ -75,29 +99,58 @@ export default function LoginPage() {
             )}
           </div>
           {isValid ? (
-            <button
-              disabled={otp.length < 6}
-              className="h-9 w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
-            >
-              Confirm OTP
-            </button>
+            <>
+              <button
+                disabled={otp.length < 6}
+                className="h-9 w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
+              >
+                Confirm OTP
+              </button>
+              <div className="flex justify-center gap-3 text-base font-normal">
+                <span className="text-[#71717A]">Didn&apos;t receive OTP?</span>
+                <span className="text-[#2563EB] cursor-pointer">
+                  Resend code
+                </span>
+              </div>
+            </>
           ) : (
             <button
-              className="h-9 w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
+              className="h-9 w-full flex items-center justify-center rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
               disabled={error !== ""}
               onClick={() => {
                 setIsSubmitted(true);
-                isEmailValid(email);
                 handleSignup();
               }}
             >
-              Let&apos;s Go
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      box-shadow="0 0 10px rgba(0,0,0,0.5)"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                </>
+              ) : (
+                "Continue"
+              )}
             </button>
           )}
-          <div className="flex justify-center gap-3 text-base font-normal">
-            <span className="text-[#71717A]">Already have an account?</span>
-            <span className="text-[#2563EB] cursor-pointer">Log in </span>
-          </div>
         </div>
         <div
           className="w-214 h-226 rounded-3xl overflow-hidden bg-cover bg-center bg-no-repeat"
