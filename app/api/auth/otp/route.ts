@@ -40,7 +40,7 @@ export const POST = async (req: NextRequest) => {
     const payload = jwt.verify(user.otp, process.env.SIGNIN_OTP!) as {
       otp: string;
     };
-    if (payload.otp !== body.otp) {
+    if (payload.otp != body.otp) {
       await prisma.user.update({
         where: { email: body.email },
         data: { otpTries: user.otpTries + 1 },

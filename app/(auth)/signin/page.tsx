@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { OtpInput } from "../../components/OtpInput";
 import axios from "axios";
+import { useUser } from "@/app/user-provider";
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
@@ -11,7 +12,7 @@ export default function LoginPage() {
   const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
-  // const {setAccessToken} = useUser();
+  const { setAccessToken } = useUser();
 
   const isEmailValid = (email: string) => {
     if (email.trim() === "") {
@@ -47,7 +48,23 @@ export default function LoginPage() {
     }
   };
 
-  const handleOtp = async () => {};
+  const handleOtp = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post("/api/auth/otp", { email, otp });
+      setLoading(false);
+      setAccessToken(response.data.accessToken);
+      alert(response.data.message);
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.message || "Something went wrong");
+      } else {
+        alert("Something went wrong");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex w-full h-screen justify-center items-center p-5">
@@ -58,6 +75,7 @@ export default function LoginPage() {
             onClick={() => {
               setIsValid(false);
               setOtp("");
+              setError("");
             }}
             className="flex cursor-pointer items-center justify-center h-9 w-9 border border-[#E4E4E7] rounded-md bg-white disabled:opacity-0 disabled:cursor-auto"
           >
@@ -101,14 +119,44 @@ export default function LoginPage() {
           {isValid ? (
             <>
               <button
-                disabled={otp.length < 6}
-                className="h-9 w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
+                disabled={otp.length < 6 || loading}
+                onClick={() => handleOtp()}
+                className="h-9 flex items-center justify-center w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
               >
-                Confirm OTP
+                {loading ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        box-shadow="0 0 10px rgba(0,0,0,0.5)"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  </>
+                ) : (
+                  "Confirm OTP"
+                )}
               </button>
               <div className="flex justify-center gap-3 text-base font-normal">
                 <span className="text-[#71717A]">Didn&apos;t receive OTP?</span>
-                <span className="text-[#2563EB] cursor-pointer">
+                <span
+                  className="text-[#2563EB] cursor-pointer"
+                  onClick={handleSignup}
+                >
                   Resend code
                 </span>
               </div>
@@ -116,7 +164,7 @@ export default function LoginPage() {
           ) : (
             <button
               className="h-9 w-full flex items-center justify-center rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
-              disabled={error !== ""}
+              disabled={error !== "" || loading}
               onClick={() => {
                 setIsSubmitted(true);
                 handleSignup();
