@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import axios from "axios";
+import { useUser } from "@/app/user-provider";
 
 type LocationItem = {
   podcode: string;
@@ -27,9 +28,16 @@ type LocationItem = {
 };
 
 export const Search = () => {
-  const [input, setInput] = useState<string>("");
+  const { user, accessToken, setUser } = useUser();
+  const [input, setInput] = useState(user?.address ?? "");
+  const [prevUserAddress, setPrevUserAddress] = useState(user?.address);
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const [address, setAddress] = useState<LocationItem[]>([]);
+
+  if (user?.address !== prevUserAddress) {
+    setPrevUserAddress(user?.address);
+    setInput(user?.address ?? "");
+  }
 
   useEffect(() => {
     if (!input.trim()) {
@@ -46,6 +54,24 @@ export const Search = () => {
 
   const handleClear = () => {
     setInput("");
+  };
+
+  const handleSelectAddress = async (selectedAddress: string) => {
+    setInput(selectedAddress);
+    setIsFocused(false);
+
+    if (!accessToken) return;
+
+    try {
+      const res = await axios.patch(
+        "/api/user/address",
+        { address: selectedAddress },
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
+      setUser(res.data.user);
+    } catch (err) {
+      console.error("Failed to save address:", err);
+    }
   };
   return (
     <div className="flex flex-col relative h-9">
@@ -104,8 +130,7 @@ export const Search = () => {
                   className="text-xs text-[#09090B] font-normal cursor-pointer hover:bg-[#f8f8f8] transition duration-300"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    setInput(`${add.full_address} | ${add.bairnote}`);
-                    setIsFocused(false);
+                    handleSelectAddress(`${add.full_address} | ${add.bairnote}`);
                   }}
                 >
                   {add.full_address} | {add.bairnote}

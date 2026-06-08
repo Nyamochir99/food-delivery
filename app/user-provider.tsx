@@ -41,8 +41,9 @@ const useUserStore = create<UseUserStore>()(
 );
 
 export const useUser = () => {
-  const { user, accessToken, loading, setAccessToken, logout } = useUserStore();
-  return { user, accessToken, loading, setAccessToken, logout };
+  const { user, accessToken, loading, setAccessToken, setUser, logout } =
+    useUserStore();
+  return { user, accessToken, loading, setAccessToken, setUser, logout };
 };
 
 export const UserProvider = () => {

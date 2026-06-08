@@ -66,11 +66,25 @@ export default function LoginPage() {
     }
   };
 
+  const handleSubmit = (e: React.SubmitEvent) => {
+    e.preventDefault();
+    if (loading) return;
+    if (isValid) {
+      if (otp.length === 6) {
+        handleOtp();
+      }
+    } else {
+      setIsSubmitted(true);
+      handleSignup();
+    }
+  };
+
   return (
     <div className="flex w-full h-screen justify-center items-center p-5">
       <div className="w-7xl flex gap-12 items-center h-full">
-        <div className="flex flex-col gap-6 w-104">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-104">
           <button
+            type="button"
             disabled={isValid === false}
             onClick={() => {
               setIsValid(false);
@@ -119,8 +133,8 @@ export default function LoginPage() {
           {isValid ? (
             <>
               <button
+                type="submit"
                 disabled={otp.length < 6 || loading}
-                onClick={() => handleOtp()}
                 className="h-9 flex items-center justify-center w-full rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -163,12 +177,9 @@ export default function LoginPage() {
             </>
           ) : (
             <button
+              type="submit"
               className="h-9 w-full flex items-center justify-center rounded-md cursor-pointer text-sm font-medium text-[#FAFAFA] bg-[#18181B] disabled:opacity-20 disabled:cursor-not-allowed"
               disabled={error !== "" || loading}
-              onClick={() => {
-                setIsSubmitted(true);
-                handleSignup();
-              }}
             >
               {loading ? (
                 <>
@@ -199,7 +210,7 @@ export default function LoginPage() {
               )}
             </button>
           )}
-        </div>
+        </form>
         <div
           className="w-214 h-226 rounded-3xl overflow-hidden bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url(/icons/bg.svg)" }}
