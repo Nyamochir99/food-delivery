@@ -9,8 +9,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useUser } from "../user-provider";
 
 export const Avatar = () => {
+  const { user, logout } = useUser();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -26,10 +28,11 @@ export const Avatar = () => {
       >
         <DropdownMenuItem className="justify-center text-base font-medium h-9 cursor-pointer">
           <UserIcon />
-          nyamochir.lkhamkhuu@gmail.com
+          {user?.email}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
+          onClick={logout}
           variant="destructive"
           className="justify-center cursor-pointer"
         >
