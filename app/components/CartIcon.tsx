@@ -36,8 +36,8 @@ export const CartIcon = ({ orderCount }: { orderCount: number }) => {
           </SheetTitle>
         </SheetHeader>
         <div className="w-full h-11 flex p-4 rounded-full bg-white">
-          <div></div>
-          <div></div>
+          <div>Cart</div>
+          <div>Order</div>
         </div>
       </SheetContent>
     </Sheet>
