@@ -6,9 +6,11 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/app/cart-provider";
 
 export type FoodItem = {
   id: string;
@@ -29,6 +31,7 @@ export const FoodDetailDialog = ({
   open,
   onOpenChange,
 }: FoodDetailDialogProps) => {
+  const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
 
   const handleOpenChange = (next: boolean) => {
@@ -42,20 +45,20 @@ export const FoodDetailDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex w-full min-w-206.5 h-103 gap-6 rounded-[20px] p-6">
+      <DialogContent className="flex h-103 w-full min-w-206.5 gap-6 rounded-[20px] p-6">
         <div
           className="h-91 w-94.25 rounded-xl bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${food.image})` }}
         />
         <div className="flex h-91 w-94.25 flex-col justify-between">
-          <div className="flex flex-col gap-3">
+          <DialogHeader className="gap-3 text-left">
             <DialogTitle className="text-3xl font-semibold text-[#EF4444]">
               {food.name}
             </DialogTitle>
             <DialogDescription className="text-base font-normal text-[#09090B]">
               {food.description}
             </DialogDescription>
-          </div>
+          </DialogHeader>
           <div className="w-full flex flex-col gap-6">
             <div className="flex justify-between items-center">
               <div className="flex flex-col gap-1 w-94.25">
@@ -91,7 +94,11 @@ export const FoodDetailDialog = ({
             </div>
             <Button
               type="button"
-              className="h-11 w-full rounded-full cursor-pointer bg-[#18181B] text-sm font-medium text-[#FAFAFA] hover:bg-[#18181B]/90"
+              onClick={() => {
+                addItem(food, quantity);
+                onOpenChange(false);
+              }}
+              className="h-11 w-full cursor-pointer rounded-full bg-[#18181B] text-sm font-medium text-[#FAFAFA] hover:bg-[#18181B]/90"
             >
               Add to cart
             </Button>

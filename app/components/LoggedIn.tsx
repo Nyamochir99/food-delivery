@@ -7,7 +7,7 @@ export const LoggedIn = () => {
   return (
     <div className="flex gap-3">
       <Search />
-      <CartIcon orderCount={1} />
+      <CartIcon />
       <Avatar />
     </div>
   );
