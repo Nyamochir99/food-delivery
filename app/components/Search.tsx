@@ -130,7 +130,9 @@ export const Search = () => {
                   className="text-xs text-[#09090B] font-normal cursor-pointer hover:bg-[#f8f8f8] transition duration-300"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    handleSelectAddress(`${add.full_address} | ${add.bairnote}`);
+                    handleSelectAddress(
+                      `${add.full_address} | ${add.bairnote}`,
+                    );
                   }}
                 >
                   {add.full_address} | {add.bairnote}
