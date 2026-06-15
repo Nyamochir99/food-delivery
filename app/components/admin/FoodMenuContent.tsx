@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SortableCategoryPills } from "@/app/components/admin/SortableCategoryPills";
+import { FoodMenuSkeleton } from "@/app/components/skeletons";
 
 type Category = {
   id: string;
@@ -186,8 +187,8 @@ export const FoodMenuContent = () => {
   };
 
   const loadData = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const [categoriesRes, foodsRes] = await Promise.all([
         authRequest<{ categories: Category[] }>({
           url: "/api/admin/categories",
@@ -209,8 +210,42 @@ export const FoodMenuContent = () => {
   }, [router]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let cancelled = false;
+
+    const fetchData = async () => {
+      try {
+        const [categoriesRes, foodsRes] = await Promise.all([
+          authRequest<{ categories: Category[] }>({
+            url: "/api/admin/categories",
+            method: "GET",
+          }),
+          authRequest<{ foods: Food[] }>({
+            url: "/api/admin/foods",
+            method: "GET",
+          }),
+        ]);
+
+        if (cancelled) return;
+
+        setCategories(categoriesRes.data.categories);
+        setFoods(foodsRes.data.foods);
+      } catch (err) {
+        if (cancelled) return;
+        if (handleAdminRequestError(err, router)) return;
+        console.error("Failed to load admin menu:", err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const resetFoodForm = () => {
     clearPendingImagePreview();
@@ -445,11 +480,7 @@ export const FoodMenuContent = () => {
     foods.filter((food) => food.categoryId === categoryId);
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-[#71717A]">
-        Loading menu...
-      </div>
-    );
+    return <FoodMenuSkeleton />;
   }
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { LogoImage } from "./Logo";
 import {
   Dialog,
   DialogContent,
@@ -37,12 +37,7 @@ export const OrderSuccessDialog = ({
         </DialogHeader>
 
         <div className="flex flex-1 items-center justify-center">
-          <Image
-            src="/icons/logo.svg"
-            alt="Order success"
-            width={160}
-            height={160}
-          />
+          <LogoImage alt="Order success" className="h-40 w-auto" />
         </div>
 
         <Button

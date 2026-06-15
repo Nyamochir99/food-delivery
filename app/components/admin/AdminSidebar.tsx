@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, Truck } from "lucide-react";
+import { LogoImage } from "../Logo";
 
 export const AdminSidebar = () => {
   const pathname = usePathname();
@@ -13,7 +13,7 @@ export const AdminSidebar = () => {
   return (
     <aside className="flex min-h-full w-60 shrink-0 flex-col border-r border-[#E4E4E7] bg-white px-4 py-6">
       <Link href="/" className="mb-10 flex items-center gap-3 px-2">
-        <Image src="/icons/logo.svg" alt="NomNom" width={46} height={38} />
+        <LogoImage alt="NomNom" />
         <div className="flex flex-col">
           <span className="text-xl font-semibold text-[#09090B]">
             Nom<span className="text-[#EF4444]">Nom</span>

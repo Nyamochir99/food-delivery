@@ -21,6 +21,8 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
+import { LogoImage } from "./Logo";
+import { OrderHistorySkeleton } from "./skeletons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authRequest } from "@/lib/auth-client";
@@ -186,12 +188,7 @@ export const CartIcon = () => {
 
                   {isEmpty ? (
                     <div className="flex flex-col items-center gap-3 rounded-xl bg-[#F4F4F5] px-6 py-10 text-center">
-                      <Image
-                        src="/icons/logo.svg"
-                        alt="empty cart"
-                        width={48}
-                        height={48}
-                      />
+                      <LogoImage alt="empty cart" className="h-12 w-auto" />
                       <p className="text-base font-semibold text-[#09090B]">
                         Your cart is empty
                       </p>
@@ -315,9 +312,7 @@ export const CartIcon = () => {
                   Order history
                 </h3>
                 {ordersLoading ? (
-                  <p className="text-sm font-normal text-[#71717A]">
-                    Loading orders...
-                  </p>
+                  <OrderHistorySkeleton />
                 ) : !user ? (
                   <p className="text-sm font-normal text-[#71717A]">
                     Sign in to view your order history.

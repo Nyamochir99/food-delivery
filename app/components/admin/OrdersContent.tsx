@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowDownUp,
-  Calendar,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -18,6 +17,7 @@ import {
 } from "@/lib/order-status";
 import type { FoodOrderStatus } from "@/lib/generated/prisma/client";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { OrdersTableSkeleton } from "@/app/components/skeletons";
 
 type OrderItem = {
   quantity: number;
@@ -74,15 +75,33 @@ const formatInputDate = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const formatDateRangeLabel = (start: string, end: string) => {
-  const formatter = new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+const createDefaultDateRange = () => {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - 30);
 
-  return `${formatter.format(new Date(start))} - ${formatter.format(new Date(end))}`;
+  return {
+    start: formatInputDate(start),
+    end: formatInputDate(end),
+  };
 };
+
+const DEFAULT_DATE_RANGE = createDefaultDateRange();
+
+type OrdersQuery = {
+  page: number;
+  sortBy: "date" | "status";
+  sortOrder: "asc" | "desc";
+  startDate: string;
+  endDate: string;
+};
+
+const requestOrders = (query: OrdersQuery) =>
+  authRequest<OrdersResponse>({
+    url: "/api/admin/orders",
+    method: "GET",
+    params: query,
+  }).then((res) => res.data);
 
 type OrderFoodItem = {
   quantity: number;
@@ -155,48 +174,69 @@ export const OrdersContent = () => {
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [bulkStatus, setBulkStatus] = useState<FoodOrderStatus>("DELIVERED");
   const [savingBulk, setSavingBulk] = useState(false);
+  const [startDate, setStartDate] = useState(DEFAULT_DATE_RANGE.start);
+  const [endDate, setEndDate] = useState(DEFAULT_DATE_RANGE.end);
 
-  const defaultEnd = formatInputDate(new Date());
-  const defaultStart = formatInputDate(
-    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+  const loadOrders = useCallback(
+    async (query: OrdersQuery, options?: { showLoading?: boolean }) => {
+      if (options?.showLoading ?? true) {
+        setLoading(true);
+      }
+
+      try {
+        const data = await requestOrders(query);
+
+        setOrders(data.orders);
+        setTotal(data.total);
+        setTotalPages(data.totalPages);
+        setSelectedIds((current) =>
+          current.filter((id) =>
+            data.orders.some((order) => order.id === id),
+          ),
+        );
+      } catch (err) {
+        if (handleAdminRequestError(err, router)) return;
+        console.error("Failed to load orders:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [router],
   );
-  const [startDate, setStartDate] = useState(defaultStart);
-  const [endDate, setEndDate] = useState(defaultEnd);
-
-  const loadOrders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await authRequest<OrdersResponse>({
-        url: "/api/admin/orders",
-        method: "GET",
-        params: {
-          page,
-          sortBy,
-          sortOrder,
-          startDate,
-          endDate,
-        },
-      });
-
-      setOrders(res.data.orders);
-      setTotal(res.data.total);
-      setTotalPages(res.data.totalPages);
-      setSelectedIds((current) =>
-        current.filter((id) =>
-          res.data.orders.some((order) => order.id === id),
-        ),
-      );
-    } catch (err) {
-      if (handleAdminRequestError(err, router)) return;
-      console.error("Failed to load orders:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, sortBy, sortOrder, startDate, endDate, router]);
 
   useEffect(() => {
-    void loadOrders();
-  }, [loadOrders]);
+    let cancelled = false;
+
+    requestOrders({
+      page: 1,
+      sortBy: "date",
+      sortOrder: "desc",
+      startDate: DEFAULT_DATE_RANGE.start,
+      endDate: DEFAULT_DATE_RANGE.end,
+    })
+      .then((data) => {
+        if (cancelled) return;
+
+        setOrders(data.orders);
+        setTotal(data.total);
+        setTotalPages(data.totalPages);
+        setSelectedIds([]);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (handleAdminRequestError(err, router)) return;
+        console.error("Failed to load orders:", err);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const allSelected = orders.length > 0 && selectedIds.length === orders.length;
 
@@ -214,13 +254,28 @@ export const OrdersContent = () => {
 
   const toggleSort = (column: "date" | "status") => {
     if (sortBy === column) {
-      setSortOrder((current) => (current === "asc" ? "desc" : "asc"));
+      const nextSortOrder = sortOrder === "asc" ? "desc" : "asc";
+      setSortOrder(nextSortOrder);
+      void loadOrders({
+        page,
+        sortBy,
+        sortOrder: nextSortOrder,
+        startDate,
+        endDate,
+      });
       return;
     }
 
     setSortBy(column);
     setSortOrder("desc");
     setPage(1);
+    void loadOrders({
+      page: 1,
+      sortBy: column,
+      sortOrder: "desc",
+      startDate,
+      endDate,
+    });
   };
 
   const updateOrderStatus = async (
@@ -233,7 +288,13 @@ export const OrdersContent = () => {
         method: "PATCH",
         data: { status },
       });
-      await loadOrders();
+      await loadOrders({
+        page,
+        sortBy,
+        sortOrder,
+        startDate,
+        endDate,
+      });
     } catch (err) {
       if (handleAdminRequestError(err, router)) return;
       console.error("Failed to update order status:", err);
@@ -255,7 +316,13 @@ export const OrdersContent = () => {
       });
       setBulkDialogOpen(false);
       setSelectedIds([]);
-      await loadOrders();
+      await loadOrders({
+        page,
+        sortBy,
+        sortOrder,
+        startDate,
+        endDate,
+      });
     } catch (err) {
       if (handleAdminRequestError(err, router)) return;
       console.error("Failed to bulk update orders:", err);
@@ -285,7 +352,13 @@ export const OrdersContent = () => {
           <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-[#09090B]">Orders</h1>
-              <p className="mt-1 text-sm text-[#71717A]">{total} items</p>
+              <div className="mt-1 text-sm text-[#71717A]">
+                {loading ? (
+                  <Skeleton className="h-4 w-16 rounded-md bg-[#E4E4E7]" />
+                ) : (
+                  `${total} items`
+                )}
+              </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -294,8 +367,16 @@ export const OrdersContent = () => {
                   type="date"
                   value={startDate}
                   onChange={(event) => {
-                    setStartDate(event.target.value);
+                    const nextStartDate = event.target.value;
+                    setStartDate(nextStartDate);
                     setPage(1);
+                    void loadOrders({
+                      page: 1,
+                      sortBy,
+                      sortOrder,
+                      startDate: nextStartDate,
+                      endDate,
+                    });
                   }}
                   className="h-8 rounded-lg border border-[#E4E4E7] px-2 text-sm outline-none"
                   aria-label="Start date"
@@ -305,8 +386,16 @@ export const OrdersContent = () => {
                   type="date"
                   value={endDate}
                   onChange={(event) => {
-                    setEndDate(event.target.value);
+                    const nextEndDate = event.target.value;
+                    setEndDate(nextEndDate);
                     setPage(1);
+                    void loadOrders({
+                      page: 1,
+                      sortBy,
+                      sortOrder,
+                      startDate,
+                      endDate: nextEndDate,
+                    });
                   }}
                   className="h-8 rounded-lg border border-[#E4E4E7] px-2 text-sm outline-none"
                   aria-label="End date"
@@ -370,14 +459,7 @@ export const OrdersContent = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="px-3 py-10 text-center text-sm text-[#71717A]"
-                    >
-                      Loading orders...
-                    </td>
-                  </tr>
+                  <OrdersTableSkeleton />
                 ) : orders.length === 0 ? (
                   <tr>
                     <td
@@ -470,7 +552,17 @@ export const OrdersContent = () => {
               <button
                 type="button"
                 disabled={page === 1}
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                onClick={() => {
+                  const nextPage = Math.max(1, page - 1);
+                  setPage(nextPage);
+                  void loadOrders({
+                    page: nextPage,
+                    sortBy,
+                    sortOrder,
+                    startDate,
+                    endDate,
+                  });
+                }}
                 className="flex size-9 items-center justify-center rounded-full text-[#71717A] transition hover:bg-[#F4F4F5] disabled:opacity-40"
                 aria-label="Previous page"
               >
@@ -488,7 +580,16 @@ export const OrdersContent = () => {
                     ) : null}
                     <button
                       type="button"
-                      onClick={() => setPage(pageNumber)}
+                      onClick={() => {
+                        setPage(pageNumber);
+                        void loadOrders({
+                          page: pageNumber,
+                          sortBy,
+                          sortOrder,
+                          startDate,
+                          endDate,
+                        });
+                      }}
                       className={`flex size-9 items-center justify-center rounded-full text-sm transition ${
                         page === pageNumber
                           ? "bg-[#18181B] text-white"
@@ -504,9 +605,17 @@ export const OrdersContent = () => {
               <button
                 type="button"
                 disabled={page === totalPages}
-                onClick={() =>
-                  setPage((current) => Math.min(totalPages, current + 1))
-                }
+                onClick={() => {
+                  const nextPage = Math.min(totalPages, page + 1);
+                  setPage(nextPage);
+                  void loadOrders({
+                    page: nextPage,
+                    sortBy,
+                    sortOrder,
+                    startDate,
+                    endDate,
+                  });
+                }}
                 className="flex size-9 items-center justify-center rounded-full text-[#71717A] transition hover:bg-[#F4F4F5] disabled:opacity-40"
                 aria-label="Next page"
               >
