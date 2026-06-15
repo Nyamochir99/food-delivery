@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import axios from "axios";
+import { authRequest } from "@/lib/auth-client";
 import { useUser } from "@/app/user-provider";
+import { User } from "@/lib/generated/prisma/client";
 
 type LocationItem = {
   podcode: string;
@@ -28,7 +30,7 @@ type LocationItem = {
 };
 
 export const Search = () => {
-  const { user, accessToken, setUser } = useUser();
+  const { user, setUser } = useUser();
   const [input, setInput] = useState(user?.address ?? "");
   const [prevUserAddress, setPrevUserAddress] = useState(user?.address);
   const [isFocused, setIsFocused] = useState<boolean>(false);
@@ -52,7 +54,23 @@ export const Search = () => {
       });
   }, [input]);
 
-  const handleClear = () => {
+  const handleClear = async () => {
+    setInput("");
+    setAddress([]);
+
+    if (user) {
+      try {
+        const res = await authRequest<{ user: User }>({
+          url: "/api/user/address",
+          method: "DELETE",
+        });
+        setUser(res.data.user);
+      } catch (err) {
+        console.error("Failed to delete address:", err);
+      }
+      return;
+    }
+
     setInput("");
   };
 
@@ -60,14 +78,14 @@ export const Search = () => {
     setInput(selectedAddress);
     setIsFocused(false);
 
-    if (!accessToken) return;
+    if (!user) return;
 
     try {
-      const res = await axios.patch(
-        "/api/user/address",
-        { address: selectedAddress },
-        { headers: { Authorization: `Bearer ${accessToken}` } },
-      );
+      const res = await authRequest<{ user: User }>({
+        url: "/api/user/address",
+        method: "PATCH",
+        data: { address: selectedAddress },
+      });
       setUser(res.data.user);
     } catch (err) {
       console.error("Failed to save address:", err);

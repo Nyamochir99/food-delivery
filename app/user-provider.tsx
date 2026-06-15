@@ -1,82 +1,82 @@
 "use client";
-import { create } from "zustand";
 import { useEffect } from "react";
 import axios from "axios";
 import { User } from "@/lib/generated/prisma/client";
-import { persist } from "zustand/middleware";
+import { authRequest, refreshAccessToken } from "@/lib/auth-client";
+import { useUserStore } from "./user-store";
 
-type UseUserStore = {
-  accessToken: string;
-  user: User | null;
-  loading: boolean;
-  _hasHydrated: boolean;
-  setUser: (user: User | null) => void;
-  setAccessToken: (accessToken: string) => void;
-  setLoading: (loading: boolean) => void;
-  setHasHydrated: (state: boolean) => void;
-  logout: () => void;
-};
-
-const useUserStore = create<UseUserStore>()(
-  persist(
-    (set) => ({
-      user: null,
-      accessToken: "",
-      loading: true,
-      _hasHydrated: false,
-      setUser: (user) => set({ user }),
-      setAccessToken: (accessToken) => set({ accessToken }),
-      setLoading: (loading) => set({ loading }),
-      setHasHydrated: (state) => set({ _hasHydrated: state }),
-      logout: () => set({ user: null, accessToken: "", loading: false }),
-    }),
-    {
-      name: "auth-storage",
-      partialize: (state) => ({ accessToken: state.accessToken }),
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
-      },
-    },
-  ),
-);
+export { useUserStore } from "./user-store";
 
 export const useUser = () => {
-  const { user, accessToken, loading, setAccessToken, setUser, logout } =
-    useUserStore();
-  return { user, accessToken, loading, setAccessToken, setUser, logout };
+  const {
+    user,
+    accessToken,
+    refreshToken,
+    loading,
+    setAccessToken,
+    setRefreshToken,
+    setUser,
+    logout,
+  } = useUserStore();
+  return {
+    user,
+    accessToken,
+    refreshToken,
+    loading,
+    setAccessToken,
+    setRefreshToken,
+    setUser,
+    logout,
+  };
 };
 
 export const UserProvider = () => {
-  const { accessToken, setUser, setLoading, logout, _hasHydrated } =
+  const { accessToken, refreshToken, setUser, setLoading, logout, _hasHydrated } =
     useUserStore();
+
   useEffect(() => {
     if (!_hasHydrated) return;
 
-    if (accessToken) {
+    const loadUser = async () => {
+      if (!accessToken && !refreshToken) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
-      axios
-        .get("/api/auth/me", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => {
+
+      try {
+        if (accessToken) {
+          const res = await authRequest<{ user: User }>({
+            url: "/api/auth/me",
+            method: "GET",
+          });
           setUser(res.data.user);
-        })
-        .catch((err) => {
-          console.error("Auth error:", err);
-          logout();
-          if (err.response?.data?.message) {
-            alert(err.response.data.message);
-          }
-        })
-        .finally(() => {
-          setLoading(false);
+          return;
+        }
+
+        const newAccessToken = await refreshAccessToken();
+        if (!newAccessToken) return;
+
+        const res = await authRequest<{ user: User }>({
+          url: "/api/auth/me",
+          method: "GET",
         });
-    } else {
-      setLoading(false);
-    }
-  }, [_hasHydrated, accessToken, setUser, setLoading, logout]);
+        setUser(res.data.user);
+      } catch (err) {
+        console.error("Auth error:", err);
+        logout();
+        if (axios.isAxiosError(err) && err.response?.data?.message) {
+          alert(err.response.data.message);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
+  }, [_hasHydrated, accessToken, refreshToken, setUser, setLoading, logout]);
 
   return null;
 };

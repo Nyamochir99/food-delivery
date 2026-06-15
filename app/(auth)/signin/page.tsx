@@ -4,6 +4,7 @@ import { useState } from "react";
 import { OtpInput } from "../../components/OtpInput";
 import axios from "axios";
 import { useUser } from "@/app/user-provider";
+import { showErrorToast, showSuccessToast } from "@/lib/show-app-toast";
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
@@ -12,7 +13,7 @@ export default function LoginPage() {
   const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
-  const { setAccessToken } = useUser();
+  const { setAccessToken, setRefreshToken } = useUser();
 
   const isEmailValid = (email: string) => {
     if (email.trim() === "") {
@@ -35,13 +36,16 @@ export default function LoginPage() {
       const response = await axios.post("/api/auth", { email });
       setIsValid(true);
       setLoading(false);
-      alert(response.data.message);
+      showSuccessToast(
+        "Verification code sent",
+        response.data.message || "Please check your email.",
+      );
     } catch (err) {
       setIsValid(false);
       if (axios.isAxiosError(err) && err.response) {
         setError(err.response.data.message || "Алдаа гарлаа.");
       } else {
-        alert("Something went wrong");
+        showErrorToast("Something went wrong", "Please try again.");
       }
     } finally {
       setLoading(false);
@@ -54,12 +58,16 @@ export default function LoginPage() {
       const response = await axios.post("/api/auth/otp", { email, otp });
       setLoading(false);
       setAccessToken(response.data.accessToken);
-      alert(response.data.message);
+      setRefreshToken(response.data.refreshToken);
+      showSuccessToast(
+        "Signed in successfully",
+        response.data.message || "Welcome back to NomNom.",
+      );
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
         setError(err.response.data.message || "Something went wrong");
       } else {
-        alert("Something went wrong");
+        showErrorToast("Something went wrong", "Please try again.");
       }
     } finally {
       setLoading(false);

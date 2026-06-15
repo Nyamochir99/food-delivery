@@ -1,22 +1,27 @@
 import { prisma } from "@/lib/prisma";
+import { verifyAccessToken } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 
-export const PATCH = async (req: NextRequest) => {
+const getUserIdFromRequest = (req: NextRequest) => {
   const authorization = req.headers.get("Authorization");
 
   if (!authorization?.startsWith("Bearer ")) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+    return null;
   }
 
-  const token = authorization.split(" ")[1];
-  let userId: string;
-
   try {
-    const payload = jwt.verify(token, process.env.TOKEN_KEY!) as { id: string };
-    userId = payload.id;
+    const payload = verifyAccessToken(authorization.split(" ")[1]);
+    return payload.id;
   } catch {
-    return NextResponse.json({ message: "Token expired" }, { status: 401 });
+    return null;
+  }
+};
+
+export const PATCH = async (req: NextRequest) => {
+  const userId = getUserIdFromRequest(req);
+
+  if (!userId) {
+    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
   const body = await req.json();
@@ -28,6 +33,23 @@ export const PATCH = async (req: NextRequest) => {
   const user = await prisma.user.update({
     where: { id: userId },
     data: { address: body.address.trim() },
+  });
+
+  const { otp: _, otpTries: __, ...safeUser } = user;
+
+  return NextResponse.json({ message: "Success!", user: safeUser });
+};
+
+export const DELETE = async (req: NextRequest) => {
+  const userId = getUserIdFromRequest(req);
+
+  if (!userId) {
+    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  }
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { address: null },
   });
 
   const { otp: _, otpTries: __, ...safeUser } = user;

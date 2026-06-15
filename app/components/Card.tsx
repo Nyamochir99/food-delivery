@@ -57,7 +57,7 @@ export const Card = ({ food }: { food: FoodItem }) => {
               ${food.price.toFixed(2)}
             </div>
           </div>
-          <div className="text-sm font-normal text-[#09090B]">
+          <div className="text-sm line-clamp-2 font-normal text-[#09090B]">
             {food.description}
           </div>
         </div>

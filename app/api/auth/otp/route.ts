@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { createAccessToken, createRefreshToken } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
@@ -58,9 +59,8 @@ export const POST = async (req: NextRequest) => {
     },
   });
 
-  const accessToken = jwt.sign(user, process.env.TOKEN_KEY!, {
-    expiresIn: "1h",
-  });
+  const accessToken = createAccessToken(user.id);
+  const refreshToken = createRefreshToken(user.id);
 
-  return NextResponse.json({ message: "Success!", accessToken });
+  return NextResponse.json({ message: "Success!", accessToken, refreshToken });
 };

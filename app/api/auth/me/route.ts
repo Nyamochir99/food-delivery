@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { verifyAccessToken } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 
 export const GET = async (req: NextRequest) => {
   const authorization = req.headers.get("Authorization");
@@ -10,7 +10,7 @@ export const GET = async (req: NextRequest) => {
   }
   const token = authorization.split(" ")[1];
   try {
-    const payload = jwt.verify(token, process.env.TOKEN_KEY!) as { id: string };
+    const payload = verifyAccessToken(token);
     const user = await prisma.user.findUnique({ where: { id: payload.id } });
 
     if (!user) {

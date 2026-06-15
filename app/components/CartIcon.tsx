@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
   Clock,
+  Loader2,
   MapPin,
   Minus,
   Plus,
@@ -22,11 +23,11 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import axios from "axios";
+import { authRequest } from "@/lib/auth-client";
 import { useCart } from "@/app/cart-provider";
-import { useGuestAddress } from "@/app/guest-address-provider";
 import { useOrders } from "@/app/order-provider";
 import { useUser } from "@/app/user-provider";
+import { User } from "@/lib/generated/prisma/client";
 import { AddressDialog } from "./AddressDialog";
 import { OrderSuccessDialog } from "./OrderSuccessDialog";
 
@@ -38,31 +39,43 @@ export const CartIcon = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const { items, itemCount, subtotal, removeItem, updateQuantity, clearCart } =
     useCart();
-  const { orders, placeOrder } = useOrders();
-  const { user, accessToken, setUser } = useUser();
-  const { guestAddress, setGuestAddress } = useGuestAddress();
+  const { orders, loading: ordersLoading, placeOrder } = useOrders();
+  const { user, setUser } = useUser();
 
   const total = subtotal + (items.length > 0 ? SHIPPING_FEE : 0);
   const isEmpty = items.length === 0;
-  const deliveryAddress = user?.address || guestAddress;
-  const hasAddress = user
-    ? Boolean(user.address?.trim())
-    : Boolean(guestAddress?.trim());
+  const deliveryAddress = user?.address ?? "";
+  const hasAddress = Boolean(user?.address?.trim());
 
-  const completeOrder = (address: string) => {
-    placeOrder({
-      items: items.map((item) => ({
-        name: item.name,
-        quantity: item.quantity,
-      })),
-      address,
-      total,
-    });
-    clearCart();
-    setTab("order");
-    setSuccessDialogOpen(true);
+  const completeOrder = async (address: string) => {
+    if (!user) {
+      router.push("/signin");
+      return;
+    }
+
+    try {
+      setCheckoutLoading(true);
+      await placeOrder({
+        items: items.map((item) => ({
+          foodId: item.id,
+          name: item.name,
+          quantity: item.quantity,
+        })),
+        address,
+        total,
+      });
+      clearCart();
+      setTab("order");
+      setSuccessDialogOpen(true);
+    } catch (err) {
+      console.error("Failed to place order:", err);
+      alert("Failed to place order. Please try again.");
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
   const handleBackToHome = () => {
@@ -72,30 +85,35 @@ export const CartIcon = () => {
   };
 
   const saveAddress = async (address: string) => {
-    if (accessToken) {
-      const res = await axios.patch(
-        "/api/user/address",
-        { address },
-        { headers: { Authorization: `Bearer ${accessToken}` } },
-      );
-      setUser(res.data.user);
-    } else {
-      setGuestAddress(address);
-    }
+    const res = await authRequest<{ user: User }>({
+      url: "/api/user/address",
+      method: "PATCH",
+      data: { address },
+    });
+    setUser(res.data.user);
   };
 
   const handleCheckout = () => {
+    if (!user) {
+      router.push("/signin");
+      return;
+    }
+
     if (hasAddress) {
-      completeOrder(deliveryAddress!);
+      void completeOrder(deliveryAddress);
       return;
     }
     setAddressDialogOpen(true);
   };
 
   const handleAddressComplete = async (address: string) => {
+    if (!user) {
+      router.push("/signin");
+      return;
+    }
+
     try {
       await saveAddress(address);
-      completeOrder(address);
     } catch (err) {
       console.error("Failed to save address:", err);
       alert("Failed to save address. Please try again.");
@@ -106,6 +124,7 @@ export const CartIcon = () => {
     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetTrigger asChild>
         <button
+          onClick={() => setTab("cart")}
           type="button"
           className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#F4F4F5]"
         >
@@ -200,12 +219,12 @@ export const CartIcon = () => {
                             className="size-25 shrink-0 rounded-xl bg-cover bg-center bg-no-repeat"
                             style={{ backgroundImage: `url(${item.image})` }}
                           />
-                          <div className="flex flex-1 flex-col gap-3">
-                            <div className="flex flex-col gap-1 pr-8">
-                              <span className="text-base font-semibold text-[#EF4444]">
+                          <div className="flex min-w-0 flex-1 flex-col gap-3">
+                            <div className="flex min-w-0 flex-col gap-1 pr-8">
+                              <span className="truncate text-base font-semibold text-[#EF4444]">
                                 {item.name}
                               </span>
-                              <span className="line-clamp-2 text-xs font-normal text-[#71717A]">
+                              <span className="truncate text-xs font-normal text-[#71717A]">
                                 {item.description}
                               </span>
                             </div>
@@ -242,7 +261,6 @@ export const CartIcon = () => {
                           </div>
                         </div>
                       ))}
-
                     </div>
                   )}
                 </div>
@@ -270,11 +288,15 @@ export const CartIcon = () => {
               </div>
               <button
                 type="button"
-                disabled={isEmpty}
+                disabled={isEmpty || checkoutLoading}
                 onClick={handleCheckout}
-                className="h-11 w-full cursor-pointer rounded-full text-sm font-medium text-[#FAFAFA] transition disabled:cursor-not-allowed disabled:bg-[#FDA4AF] enabled:bg-[#EF4444] enabled:hover:bg-[#EF4444]/90"
+                className="flex h-11 w-full cursor-pointer items-center justify-center rounded-full text-sm font-medium text-[#FAFAFA] transition disabled:cursor-not-allowed disabled:bg-[#FDA4AF] enabled:bg-[#EF4444] enabled:hover:bg-[#EF4444]/90"
               >
-                Checkout
+                {checkoutLoading ? (
+                  <Loader2 className="size-5 animate-spin" />
+                ) : (
+                  "Checkout"
+                )}
               </button>
             </div>
 
@@ -292,57 +314,67 @@ export const CartIcon = () => {
                 <h3 className="text-xl font-semibold text-[#09090B]">
                   Order history
                 </h3>
-                {orders.length === 0 ? (
+                {ordersLoading ? (
+                  <p className="text-sm font-normal text-[#71717A]">
+                    Loading orders...
+                  </p>
+                ) : !user ? (
+                  <p className="text-sm font-normal text-[#71717A]">
+                    Sign in to view your order history.
+                  </p>
+                ) : orders.length === 0 ? (
                   <p className="text-sm font-normal text-[#71717A]">
                     No orders yet. Checkout your cart to place an order.
                   </p>
                 ) : (
                   orders.map((order, index) => (
-                  <div key={order.id}>
-                    <div className="flex flex-col gap-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-base font-semibold text-[#09090B]">
-                          ${order.total.toFixed(2)} (#{order.orderNumber})
-                        </span>
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-medium ${
-                            order.status === "Pending"
-                              ? "border border-[#EF4444] text-[#EF4444]"
-                              : "bg-[#F4F4F5] text-[#71717A]"
-                          }`}
-                        >
-                          {order.status}
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        {order.items.map((item, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between text-sm text-[#09090B]"
+                    <div key={order.id}>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-base font-semibold text-[#09090B]">
+                            ${order.total.toFixed(2)} (#{order.orderNumber})
+                          </span>
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-medium ${
+                              order.status === "Pending"
+                                ? "border border-[#EF4444] text-[#EF4444]"
+                                : order.status === "Delivered"
+                                  ? "border border-[#22C55E] text-[#22C55E]"
+                                  : "border border-[#18181B] text-[#18181B]"
+                            }`}
                           >
-                            <div className="flex items-center gap-2">
-                              <Soup className="size-4 text-[#71717A]" />
-                              <span>{item.name}</span>
+                            {order.status}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {order.items.map((item, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center justify-between text-sm text-[#09090B]"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Soup className="size-4 text-[#71717A]" />
+                                <span>{item.name}</span>
+                              </div>
+                              <span className="text-[#71717A]">
+                                x {item.quantity}
+                              </span>
                             </div>
-                            <span className="text-[#71717A]">
-                              x {item.quantity}
-                            </span>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-[#71717A]">
+                          <Clock className="size-4 shrink-0" />
+                          <span>{order.date}</span>
+                        </div>
+                        <div className="flex items-start gap-2 text-sm text-[#71717A]">
+                          <MapPin className="mt-0.5 size-4 shrink-0" />
+                          <span>{order.address}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-[#71717A]">
-                        <Clock className="size-4 shrink-0" />
-                        <span>{order.date}</span>
-                      </div>
-                      <div className="flex items-start gap-2 text-sm text-[#71717A]">
-                        <MapPin className="mt-0.5 size-4 shrink-0" />
-                        <span>{order.address}</span>
-                      </div>
+                      {index < orders.length - 1 && (
+                        <Separator className="my-6 border-dashed bg-transparent" />
+                      )}
                     </div>
-                    {index < orders.length - 1 && (
-                      <Separator className="my-6 border-dashed bg-transparent" />
-                    )}
-                  </div>
                   ))
                 )}
               </div>
