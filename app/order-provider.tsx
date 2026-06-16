@@ -2,8 +2,7 @@
 
 import { create } from "zustand";
 import { useCallback, useEffect } from "react";
-import axios from "axios";
-import { authRequest } from "@/lib/auth-client";
+import { authRequest, isUnauthorizedError } from "@/lib/auth-client";
 import {
   mapDbOrderToOrder,
   type DbOrder,
@@ -47,19 +46,6 @@ const fetchOrdersFromApi = async () => {
   });
 
   return res.data.orders.map(mapDbOrderToOrder);
-};
-
-const isUnauthorizedError = (error: unknown) => {
-  if (axios.isAxiosError(error) && error.response?.status === 401) {
-    return true;
-  }
-
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "response" in error &&
-    (error as { response?: { status?: number } }).response?.status === 401
-  );
 };
 
 export const OrderProvider = () => {

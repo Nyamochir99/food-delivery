@@ -323,52 +323,50 @@ export const CartIcon = () => {
                   </p>
                 ) : (
                   orders.map((order, index) => (
-                    <div key={order.id}>
-                      <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-base font-semibold text-[#09090B]">
-                            ${order.total.toFixed(2)} (#{order.orderNumber})
-                          </span>
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-medium ${
-                              order.status === "Pending"
-                                ? "border border-[#EF4444] text-[#EF4444]"
-                                : order.status === "Delivered"
-                                  ? "border border-[#22C55E] text-[#22C55E]"
-                                  : "border border-[#18181B] text-[#18181B]"
-                            }`}
-                          >
-                            {order.status}
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          {order.items.map((item, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center justify-between text-sm text-[#09090B]"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Soup className="size-4 text-[#71717A]" />
-                                <span>{item.name}</span>
-                              </div>
-                              <span className="text-[#71717A]">
-                                x {item.quantity}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-[#71717A]">
-                          <Clock className="size-4 shrink-0" />
-                          <span>{order.date}</span>
-                        </div>
-                        <div className="flex items-start gap-2 text-sm text-[#71717A]">
-                          <MapPin className="mt-0.5 size-4 shrink-0" />
-                          <span>{order.address}</span>
-                        </div>
+                    <div
+                      key={order.id}
+                      className="flex flex-col gap-4 border-b border-dashed border-[#E4E4E7] pb-6 last:border-none last:pb-0"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-semibold text-[#09090B]">
+                          ${order.total.toFixed(2)} (#{order.orderNumber})
+                        </span>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-medium ${
+                            order.status === "Pending"
+                              ? "border border-[#EF4444] text-[#EF4444]"
+                              : order.status === "Delivered"
+                                ? "border border-[#22C55E] text-[#22C55E]"
+                                : "border border-[#18181B] text-[#18181B]"
+                          }`}
+                        >
+                          {order.status}
+                        </span>
                       </div>
-                      {index < orders.length - 1 && (
-                        <Separator className="my-6 border-dashed bg-transparent" />
-                      )}
+                      <div className="flex flex-col gap-2">
+                        {order.items.map((item, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between text-sm text-[#09090B]"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Soup className="size-4 text-[#71717A]" />
+                              <span>{item.name}</span>
+                            </div>
+                            <span className="text-[#71717A]">
+                              x {item.quantity}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-[#71717A]">
+                        <Clock className="size-4 shrink-0" />
+                        <span>{order.date}</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm text-[#71717A]">
+                        <MapPin className="mt-0.5 size-4 shrink-0" />
+                        <span>{order.address}</span>
+                      </div>
                     </div>
                   ))
                 )}

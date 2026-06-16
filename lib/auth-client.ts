@@ -5,6 +5,30 @@ import { useUserStore } from "@/app/user-store";
 
 let refreshPromise: Promise<string | null> | null = null;
 
+export class UnauthorizedError extends Error {
+  constructor() {
+    super("Unauthorized");
+    this.name = "UnauthorizedError";
+  }
+}
+
+export const isUnauthorizedError = (error: unknown) => {
+  if (error instanceof UnauthorizedError) {
+    return true;
+  }
+
+  if (axios.isAxiosError(error) && error.response?.status === 401) {
+    return true;
+  }
+
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    (error as { response?: { status?: number } }).response?.status === 401
+  );
+};
+
 export const refreshAccessToken = async (): Promise<string | null> => {
   const { refreshToken, setAccessToken, setRefreshToken, logout } =
     useUserStore.getState();
@@ -40,11 +64,7 @@ export const authRequest = async <T>(config: AxiosRequestConfig) => {
   const { accessToken } = useUserStore.getState();
 
   if (!accessToken) {
-    const error = new Error("Unauthorized") as Error & {
-      response?: { status: number };
-    };
-    error.response = { status: 401 };
-    throw error;
+    throw new UnauthorizedError();
   }
 
   try {
@@ -56,21 +76,30 @@ export const authRequest = async <T>(config: AxiosRequestConfig) => {
       },
     });
   } catch (error) {
-    if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+    if (!isUnauthorizedError(error)) {
       throw error;
     }
 
     const newAccessToken = await refreshAccessToken();
     if (!newAccessToken) {
-      throw error;
+      throw new UnauthorizedError();
     }
 
-    return axios<T>({
-      ...config,
-      headers: {
-        ...config.headers,
-        Authorization: `Bearer ${newAccessToken}`,
-      },
-    });
+    try {
+      return await axios<T>({
+        ...config,
+        headers: {
+          ...config.headers,
+          Authorization: `Bearer ${newAccessToken}`,
+        },
+      });
+    } catch (retryError) {
+      if (isUnauthorizedError(retryError)) {
+        useUserStore.getState().logout();
+        throw new UnauthorizedError();
+      }
+
+      throw retryError;
+    }
   }
 };
