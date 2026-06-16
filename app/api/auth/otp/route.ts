@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createAccessToken, createRefreshToken } from "@/lib/auth";
+import { getTestAccount } from "@/lib/test-auth";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
@@ -36,26 +37,35 @@ export const POST = async (req: NextRequest) => {
       { status: 403 },
     );
   }
-  try {
-    if (!user.otp) throw new Error("No OTP requested");
-    const payload = jwt.verify(user.otp, process.env.SIGNIN_OTP!) as {
-      otp: string;
-    };
-    if (payload.otp != body.otp) {
-      await prisma.user.update({
-        where: { email: body.email },
-        data: { otpTries: user.otpTries + 1 },
-      });
-      return NextResponse.json({ message: "Invalid OTP" }, { status: 401 });
+
+  const testAccount = getTestAccount(body.email);
+  const isValidTestOtp =
+    testAccount !== null && body.otp === testAccount.otp;
+
+  if (!isValidTestOtp) {
+    try {
+      if (!user.otp) throw new Error("No OTP requested");
+      const payload = jwt.verify(user.otp, process.env.SIGNIN_OTP!) as {
+        otp: string;
+      };
+      if (payload.otp != body.otp) {
+        await prisma.user.update({
+          where: { email: body.email },
+          data: { otpTries: user.otpTries + 1 },
+        });
+        return NextResponse.json({ message: "Invalid OTP" }, { status: 401 });
+      }
+    } catch {
+      return NextResponse.json({ message: "OTP Expired" }, { status: 401 });
     }
-  } catch {
-    return NextResponse.json({ message: "OTP Expired" }, { status: 401 });
   }
+
   await prisma.user.update({
     where: { email: body.email },
     data: {
       otpTries: 0,
       otp: null,
+      ...(testAccount ? { role: testAccount.role } : {}),
     },
   });
 

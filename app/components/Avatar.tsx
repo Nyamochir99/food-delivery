@@ -80,7 +80,7 @@ export const Avatar = () => {
                 </TooltipContent>
               </Tooltip>
               <span className="text-xs text-[#71717A]">
-                {user?.role === "ADMIN" ? "Admin" : "Member"}
+                {user?.role === "ADMIN" ? "Admin" : ""}
               </span>
             </div>
           </DropdownMenuLabel>

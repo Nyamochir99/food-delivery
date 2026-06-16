@@ -1,11 +1,12 @@
 "use client";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { User } from "@/lib/generated/prisma/client";
 import {
   authRequest,
   isUnauthorizedError,
   refreshAccessToken,
 } from "@/lib/auth-client";
+import { showSuccessToast } from "@/lib/show-app-toast";
 import { useUserStore } from "./user-store";
 
 export { useUserStore } from "./user-store";
@@ -19,8 +20,14 @@ export const useUser = () => {
     setAccessToken,
     setRefreshToken,
     setUser,
-    logout,
+    logout: storeLogout,
   } = useUserStore();
+
+  const logout = useCallback(() => {
+    storeLogout();
+    showSuccessToast("Logged out", "You have been signed out successfully.");
+  }, [storeLogout]);
+
   return {
     user,
     accessToken,

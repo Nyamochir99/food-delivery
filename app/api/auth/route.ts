@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getTestAccount } from "@/lib/test-auth";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { Resend } from "resend";
@@ -24,18 +25,24 @@ export const POST = async (req: NextRequest) => {
 
   let user = await prisma.user.findUnique({ where: { email: body.email } });
 
-  const otp = generateOtp();
+  const testAccount = getTestAccount(body.email);
+  const otp = testAccount?.otp ?? generateOtp();
 
   const token = jwt.sign({ otp }, process.env.SIGNIN_OTP!, {
     expiresIn: "5m",
   });
 
+  const userData = {
+    otp: token,
+    otpTries: 0,
+    ...(testAccount ? { role: testAccount.role } : {}),
+  };
+
   if (!user) {
     user = await prisma.user.create({
       data: {
         email: body.email,
-        otp: token,
-        otpTries: 0,
+        ...userData,
       },
     });
   } else {
@@ -43,17 +50,22 @@ export const POST = async (req: NextRequest) => {
       where: {
         email: body.email,
       },
-      data: {
-        otp: token,
-        otpTries: 0,
-      },
+      data: userData,
     });
   }
-  await resend.emails.send({
-    from: "noreply@resend.dev",
-    to: body.email,
-    subject: "Your OTP code",
-    html: `<p>OTP code: <strong>${otp}</strong></p>`,
+
+  if (!testAccount) {
+    await resend.emails.send({
+      from: "noreply@resend.dev",
+      to: body.email,
+      subject: "Your OTP code",
+      html: `<p>OTP code: <strong>${otp}</strong></p>`,
+    });
+  }
+
+  return NextResponse.json({
+    message: testAccount
+      ? `Test account ready. Use OTP: ${testAccount.otp}`
+      : "Success! Check your email",
   });
-  return NextResponse.json({ message: "Success! Check your email" });
 };
