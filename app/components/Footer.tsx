@@ -37,13 +37,12 @@ export const Footer = async () => {
               <div className="flex flex-col gap-4">
                 <span className="text-[#71717A]">MENU</span>
                 {firstColumn.map((category) => (
-                  <Link
+                  <div
                     key={category.id}
-                    href={`/#category-${category.id}`}
                     className="cursor-pointer text-[#FAFAFA]"
                   >
                     {category.categoryName}
-                  </Link>
+                  </div>
                 ))}
               </div>
               {secondColumn.length > 0 ? (
