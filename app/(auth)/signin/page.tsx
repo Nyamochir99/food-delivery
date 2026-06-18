@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { OtpInput } from "../../components/OtpInput";
 import axios from "axios";
@@ -89,9 +90,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex w-full h-screen justify-center items-center p-5">
-      <div className="w-7xl flex gap-12 items-center h-full">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-104">
+    <div className="flex h-screen w-full items-center justify-center p-5">
+      <div className="relative flex w-7xl items-center gap-12">
+        <Link
+          href="/"
+          aria-label="Back to home"
+          className="absolute left-0 top-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[#E4E4E7] bg-white"
+        >
+          <Image src="/icons/back.svg" alt="back" width={16} height={16} />
+        </Link>
+        <form onSubmit={handleSubmit} className="flex w-104 flex-col gap-6">
           <button
             type="button"
             disabled={isValid === false}
