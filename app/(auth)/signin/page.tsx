@@ -5,6 +5,7 @@ import { OtpInput } from "../../components/OtpInput";
 import axios from "axios";
 import { useUser } from "@/app/user-provider";
 import { showErrorToast, showSuccessToast } from "@/lib/show-app-toast";
+import { SignInImage } from "@/app/components/SignInImage";
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
@@ -219,10 +220,7 @@ export default function LoginPage() {
             </button>
           )}
         </form>
-        <div
-          className="w-214 h-226 rounded-3xl overflow-hidden bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url(/icons/bg.svg)" }}
-        ></div>
+        <SignInImage />
       </div>
     </div>
   );

@@ -123,6 +123,14 @@ export const OrderHistorySkeleton = () => (
   </div>
 );
 
+export const BigPictureSkeleton = () => (
+  <Skeleton className="mt-17 h-142.5 w-full rounded-none bg-[#E4E4E7]/30" />
+);
+
+export const SignInImageSkeleton = () => (
+  <Skeleton className="h-226 w-214 shrink-0 rounded-3xl bg-[#E4E4E7]" />
+);
+
 export const HeaderAuthSkeleton = () => (
   <div className="flex gap-3">
     <Skeleton className="h-9 w-63 rounded-full bg-white/15" />
@@ -153,14 +161,17 @@ export const AdminLayoutSkeleton = () => (
 );
 
 export const SignInLayoutSkeleton = () => (
-  <div className="flex w-full max-w-104 flex-col gap-6">
-    <Skeleton className="size-9 rounded-md bg-[#E4E4E7]" />
-    <div className="flex flex-col gap-2">
-      <Skeleton className="h-8 w-48 rounded-md bg-[#E4E4E7]" />
-      <Skeleton className="h-5 w-full rounded-md bg-[#E4E4E7]" />
+  <div className="flex h-full w-7xl items-center gap-12">
+    <div className="flex w-104 flex-col gap-6">
+      <Skeleton className="size-9 rounded-md bg-[#E4E4E7]" />
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-8 w-48 rounded-md bg-[#E4E4E7]" />
+        <Skeleton className="h-5 w-full rounded-md bg-[#E4E4E7]" />
+      </div>
+      <Skeleton className="h-9 w-full rounded-md bg-[#E4E4E7]" />
+      <Skeleton className="h-9 w-full rounded-md bg-[#E4E4E7]" />
     </div>
-    <Skeleton className="h-9 w-full rounded-md bg-[#E4E4E7]" />
-    <Skeleton className="h-9 w-full rounded-md bg-[#E4E4E7]" />
+    <SignInImageSkeleton />
   </div>
 );
 

@@ -17,7 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center p-5">
+      <div className="flex h-screen w-full items-center justify-center p-5">
         <SignInLayoutSkeleton />
       </div>
     );
