@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { OtpInput } from "../../components/OtpInput";
 import axios from "axios";
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
   const { setAccessToken, setRefreshToken } = useUser();
+  const router = useRouter();
 
   const isEmailValid = (email: string) => {
     if (email.trim() === "") {
@@ -91,24 +92,20 @@ export default function LoginPage() {
 
   return (
     <div className="flex h-screen w-full items-center justify-center p-5">
-      <div className="relative flex w-7xl items-center gap-12">
-        <Link
-          href="/"
-          aria-label="Back to home"
-          className="absolute left-0 top-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[#E4E4E7] bg-white"
-        >
-          <Image src="/icons/back.svg" alt="back" width={16} height={16} />
-        </Link>
+      <div className="flex w-7xl items-center gap-12">
         <form onSubmit={handleSubmit} className="flex w-104 flex-col gap-6">
           <button
             type="button"
-            disabled={isValid === false}
             onClick={() => {
-              setIsValid(false);
-              setOtp("");
-              setError("");
+              if (isValid) {
+                setIsValid(false);
+                setOtp("");
+                setError("");
+              } else {
+                router.push("/");
+              }
             }}
-            className="flex cursor-pointer items-center justify-center h-9 w-9 border border-[#E4E4E7] rounded-md bg-white disabled:opacity-0 disabled:cursor-auto"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-[#E4E4E7] bg-white"
           >
             <Image src="/icons/back.svg" alt="back" width={16} height={16} />
           </button>
