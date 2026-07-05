@@ -74,7 +74,7 @@ export const Avatar = () => {
                 <TooltipContent
                   side="top"
                   sideOffset={4}
-                  className="z-[100] max-w-xs break-all"
+                  className="z-100 max-w-xs break-all"
                 >
                   {user?.email}
                 </TooltipContent>
