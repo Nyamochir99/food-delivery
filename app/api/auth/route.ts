@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { sendOtpEmail } from "@/lib/mail";
-import { getTestAccount } from "@/lib/test-auth";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
@@ -23,8 +22,7 @@ export const POST = async (req: NextRequest) => {
 
   let user = await prisma.user.findUnique({ where: { email: body.email } });
 
-  const testAccount = getTestAccount(body.email);
-  const otp = testAccount?.otp ?? generateOtp();
+  const otp = generateOtp();
 
   const token = jwt.sign({ otp }, process.env.SIGNIN_OTP!, {
     expiresIn: "5m",
@@ -33,7 +31,6 @@ export const POST = async (req: NextRequest) => {
   const userData = {
     otp: token,
     otpTries: 0,
-    ...(testAccount ? { role: testAccount.role } : {}),
   };
 
   if (!user) {
@@ -52,21 +49,15 @@ export const POST = async (req: NextRequest) => {
     });
   }
 
-  if (!testAccount) {
-    try {
-      await sendOtpEmail(body.email, String(otp));
-    } catch (err) {
-      console.error("Failed to send OTP email:", err);
-      return NextResponse.json(
-        { message: "Failed to send verification email. Please try again." },
-        { status: 500 },
-      );
-    }
+  try {
+    await sendOtpEmail(body.email, String(otp));
+  } catch (err) {
+    console.error("Failed to send OTP email:", err);
+    return NextResponse.json(
+      { message: "Failed to send verification email. Please try again." },
+      { status: 500 },
+    );
   }
 
-  return NextResponse.json({
-    message: testAccount
-      ? `Test account ready. Use OTP: ${testAccount.otp}`
-      : "Success! Check your email",
-  });
+  return NextResponse.json({ message: "Success! Check your email" });
 };
