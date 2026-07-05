@@ -129,6 +129,7 @@ const OrderFoodItemsPopover = ({
       </button>
     </TooltipTrigger>
     <TooltipContent
+      hideArrow
       side="bottom"
       align="start"
       sideOffset={8}
@@ -376,7 +377,7 @@ export const OrdersContent = () => {
                       endDate,
                     });
                   }}
-                  className="h-8 rounded-lg border border-[#E4E4E7] px-2 text-sm outline-none"
+                  className="h-8 cursor-default rounded-lg border border-[#E4E4E7] px-2 text-sm outline-none [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   aria-label="Start date"
                 />
                 <span className="text-[#71717A]">-</span>
@@ -395,7 +396,7 @@ export const OrdersContent = () => {
                       endDate: nextEndDate,
                     });
                   }}
-                  className="h-8 rounded-lg border border-[#E4E4E7] px-2 text-sm outline-none"
+                  className="h-8 cursor-default rounded-lg border border-[#E4E4E7] px-2 text-sm outline-none [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   aria-label="End date"
                 />
               </div>
@@ -403,7 +404,7 @@ export const OrdersContent = () => {
                 type="button"
                 disabled={selectedIds.length === 0}
                 onClick={() => setBulkDialogOpen(true)}
-                className="h-11 rounded-full bg-[#18181B] px-5 text-white hover:bg-[#18181B]/90 disabled:bg-[#E4E4E7] disabled:text-[#71717A]"
+                className="h-11 cursor-pointer rounded-full bg-[#18181B] px-5 text-white hover:bg-[#18181B]/90 disabled:cursor-not-allowed disabled:bg-[#E4E4E7] disabled:text-[#71717A]"
               >
                 Change delivery state
                 {selectedIds.length > 0 ? (
@@ -424,7 +425,7 @@ export const OrdersContent = () => {
                       type="checkbox"
                       checked={allSelected}
                       onChange={toggleSelectAll}
-                      className="size-4 rounded border-[#E4E4E7]"
+                      className="size-4 cursor-pointer rounded border-[#E4E4E7]"
                       aria-label="Select all orders"
                     />
                   </th>
@@ -435,7 +436,7 @@ export const OrdersContent = () => {
                     <button
                       type="button"
                       onClick={() => toggleSort("date")}
-                      className="inline-flex items-center gap-1"
+                      className="inline-flex cursor-pointer items-center gap-1"
                     >
                       Date
                       <ArrowDownUp className="size-3.5" />
@@ -447,7 +448,7 @@ export const OrdersContent = () => {
                     <button
                       type="button"
                       onClick={() => toggleSort("status")}
-                      className="inline-flex items-center gap-1"
+                      className="inline-flex cursor-pointer items-center gap-1"
                     >
                       Delivery state
                       <ArrowDownUp className="size-3.5" />
@@ -484,7 +485,7 @@ export const OrdersContent = () => {
                             type="checkbox"
                             checked={selectedIds.includes(order.id)}
                             onChange={() => toggleSelect(order.id)}
-                            className="size-4 rounded border-[#E4E4E7]"
+                            className="size-4 cursor-pointer rounded border-[#E4E4E7]"
                             aria-label={`Select order ${index + 1}`}
                           />
                         </td>
@@ -514,7 +515,7 @@ export const OrdersContent = () => {
                             <DropdownMenuTrigger asChild>
                               <button
                                 type="button"
-                                className={`inline-flex h-8 items-center gap-1 rounded-full border px-3 text-sm font-medium ${ORDER_STATUS_STYLES[order.status]}`}
+                                className={`inline-flex h-8 cursor-pointer items-center gap-1 rounded-full border px-3 text-sm font-medium ${ORDER_STATUS_STYLES[order.status]}`}
                               >
                                 {ORDER_STATUS_LABELS[order.status]}
                                 <ChevronDown className="size-3.5" />
@@ -561,7 +562,7 @@ export const OrdersContent = () => {
                     endDate,
                   });
                 }}
-                className="flex size-9 items-center justify-center rounded-full text-[#71717A] transition hover:bg-[#F4F4F5] disabled:opacity-40"
+                className="flex size-9 cursor-pointer items-center justify-center rounded-full text-[#71717A] transition hover:bg-[#F4F4F5] disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Previous page"
               >
                 <ChevronLeft className="size-4" />
@@ -588,7 +589,7 @@ export const OrdersContent = () => {
                           endDate,
                         });
                       }}
-                      className={`flex size-9 items-center justify-center rounded-full text-sm transition ${
+                      className={`flex size-9 cursor-pointer items-center justify-center rounded-full text-sm transition ${
                         page === pageNumber
                           ? "bg-[#18181B] text-white"
                           : "text-[#71717A] hover:bg-[#F4F4F5]"
@@ -614,7 +615,7 @@ export const OrdersContent = () => {
                     endDate,
                   });
                 }}
-                className="flex size-9 items-center justify-center rounded-full text-[#71717A] transition hover:bg-[#F4F4F5] disabled:opacity-40"
+                className="flex size-9 cursor-pointer items-center justify-center rounded-full text-[#71717A] transition hover:bg-[#F4F4F5] disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Next page"
               >
                 <ChevronRight className="size-4" />
