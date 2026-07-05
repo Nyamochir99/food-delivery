@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
+import {
+  categoryWithCountInclude,
+  validateCategoryName,
+} from "@/lib/admin-category";
 import { NextRequest, NextResponse } from "next/server";
 
 export const PATCH = async (
@@ -11,18 +15,16 @@ export const PATCH = async (
 
   const { id } = await params;
   const body = await req.json();
+  const validated = validateCategoryName(body.categoryName);
 
-  if (!body.categoryName?.trim()) {
-    return NextResponse.json(
-      { message: "Category name is required" },
-      { status: 400 },
-    );
+  if ("error" in validated) {
+    return NextResponse.json(validated.error, { status: validated.status });
   }
 
   const category = await prisma.foodCategory.update({
     where: { id },
-    data: { categoryName: body.categoryName.trim() },
-    include: { _count: { select: { foods: true } } },
+    data: { categoryName: validated.value },
+    include: categoryWithCountInclude,
   });
 
   return NextResponse.json({ category });

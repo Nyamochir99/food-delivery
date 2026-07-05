@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendOtpEmail } from "@/lib/mail";
+import { isValidEmail } from "@/lib/validation";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
@@ -14,9 +15,7 @@ export const POST = async (req: NextRequest) => {
     return NextResponse.json({ message: "Email is required" }, { status: 400 });
   }
 
-  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-  if (!regex.test(body.email)) {
+  if (!isValidEmail(body.email)) {
     return NextResponse.json({ message: "Invalid email" }, { status: 400 });
   }
 

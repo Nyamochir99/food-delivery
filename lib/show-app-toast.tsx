@@ -4,7 +4,11 @@ import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react";
 
-export const showSuccessToast = (title: string, description?: string) => {
+export const showSuccessToast = (
+  title: string,
+  description?: string,
+  duration = 4000,
+) => {
   toast.custom(
     () => (
       <Alert className="w-88 border-[#E4E4E7] bg-white shadow-xl">
@@ -17,7 +21,7 @@ export const showSuccessToast = (title: string, description?: string) => {
         ) : null}
       </Alert>
     ),
-    { duration: 4000 },
+    { duration },
   );
 };
 

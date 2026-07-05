@@ -7,27 +7,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import axios from "axios";
 import { authRequest } from "@/lib/auth-client";
+import { type LocationItem } from "@/lib/location";
 import { useUser } from "@/app/user-provider";
 import { User } from "@/lib/generated/prisma/client";
-
-type LocationItem = {
-  podcode: string;
-  podph: string;
-  bairname: string;
-  city: string;
-  horoo: string;
-  podtoktok: string;
-  latitude: string;
-  podkfc: string;
-  geopoint: string;
-  lon: string;
-  full_address: string;
-  bairnote: string;
-  district: string;
-  id: string;
-  lat: string;
-  longitude: string;
-};
 
 export const Search = () => {
   const { user, setUser } = useUser();

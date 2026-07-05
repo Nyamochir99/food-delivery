@@ -2,19 +2,14 @@
 
 import { useState } from "react";
 import { GripVertical, Pencil } from "lucide-react";
-
-type Category = {
-  id: string;
-  categoryName: string;
-  _count: { foods: number };
-};
+import type { AdminCategory } from "@/lib/types/admin-menu";
 
 type SortableCategoryPillsProps = {
-  categories: Category[];
+  categories: AdminCategory[];
   selectedCategoryId: string;
   onSelect: (categoryId: string) => void;
-  onEdit: (category: Category) => void;
-  onReorder: (categories: Category[]) => void;
+  onEdit: (category: AdminCategory) => void;
+  onReorder: (categories: AdminCategory[]) => void;
 };
 
 export const SortableCategoryPills = ({

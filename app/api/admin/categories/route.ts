@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
+import {
+  categoryWithCountInclude,
+  validateCategoryName,
+} from "@/lib/admin-category";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
@@ -7,7 +11,7 @@ export const GET = async (req: NextRequest) => {
   if (auth.error) return auth.error;
 
   const categories = await prisma.foodCategory.findMany({
-    include: { _count: { select: { foods: true } } },
+    include: categoryWithCountInclude,
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
   });
 
@@ -19,12 +23,10 @@ export const POST = async (req: NextRequest) => {
   if (auth.error) return auth.error;
 
   const body = await req.json();
+  const validated = validateCategoryName(body.categoryName);
 
-  if (!body.categoryName?.trim()) {
-    return NextResponse.json(
-      { message: "Category name is required" },
-      { status: 400 },
-    );
+  if ("error" in validated) {
+    return NextResponse.json(validated.error, { status: validated.status });
   }
 
   const maxSortOrder = await prisma.foodCategory.aggregate({
@@ -33,10 +35,10 @@ export const POST = async (req: NextRequest) => {
 
   const category = await prisma.foodCategory.create({
     data: {
-      categoryName: body.categoryName.trim(),
+      categoryName: validated.value,
       sortOrder: (maxSortOrder._max.sortOrder ?? -1) + 1,
     },
-    include: { _count: { select: { foods: true } } },
+    include: categoryWithCountInclude,
   });
 
   return NextResponse.json({ category });

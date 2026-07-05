@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
+import { validateFoodPayload } from "@/lib/admin-food";
 import { NextRequest, NextResponse } from "next/server";
 
 export const PATCH = async (
@@ -11,35 +12,15 @@ export const PATCH = async (
 
   const { id } = await params;
   const body = await req.json();
+  const validated = validateFoodPayload(body);
 
-  if (!body.foodName?.trim()) {
-    return NextResponse.json(
-      { message: "Food name is required" },
-      { status: 400 },
-    );
-  }
-
-  if (!body.categoryId) {
-    return NextResponse.json(
-      { message: "Category is required" },
-      { status: 400 },
-    );
-  }
-
-  const price = Number(body.price);
-  if (Number.isNaN(price) || price <= 0) {
-    return NextResponse.json({ message: "Invalid price" }, { status: 400 });
+  if ("error" in validated) {
+    return NextResponse.json(validated.error, { status: validated.status });
   }
 
   const food = await prisma.food.update({
     where: { id },
-    data: {
-      foodName: body.foodName.trim(),
-      price,
-      image: body.image?.trim() || "https://placehold.co/366x210",
-      ingredients: body.ingredients?.trim() || "",
-      categoryId: body.categoryId,
-    },
+    data: validated.value,
     include: { category: true },
   });
 

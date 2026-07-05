@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CircleCheckIcon,
   ImageIcon,
   Loader2,
   Pencil,
@@ -14,9 +13,12 @@ import {
 import { toast } from "sonner";
 import { authRequest } from "@/lib/auth-client";
 import { handleAdminRequestError } from "@/lib/admin-client";
+import { fetchAdminMenuData } from "@/lib/admin-menu-client";
+import { formatUsd, parsePriceInput } from "@/lib/format-price";
+import { showSuccessToast } from "@/lib/show-app-toast";
+import type { AdminCategory, AdminFood } from "@/lib/types/admin-menu";
 import { uploadImage, deleteBlobImage, UploadError } from "@/lib/upload-client";
 import { isVercelBlobUrl } from "@/lib/blob-utils";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,46 +30,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { SortableCategoryPills } from "@/app/components/admin/SortableCategoryPills";
 import { FoodMenuSkeleton } from "@/app/components/skeletons";
-
-type Category = {
-  id: string;
-  categoryName: string;
-  _count: { foods: number };
-};
-
-type Food = {
-  id: string;
-  foodName: string;
-  price: number;
-  image: string;
-  ingredients: string;
-  categoryId: string;
-  category: {
-    id: string;
-    categoryName: string;
-  };
-};
-
-const showDishToast = (title: string, description?: string) => {
-  toast.custom(
-    () => (
-      <Alert className="w-88 border-[#E4E4E7] bg-white shadow-xl">
-        <CircleCheckIcon className="text-[#EF4444]" />
-        <AlertTitle className="text-[#09090B]">{title}</AlertTitle>
-        {description ? (
-          <AlertDescription className="text-[#71717A]">
-            {description}
-          </AlertDescription>
-        ) : null}
-      </Alert>
-    ),
-    { duration: 4000 },
-  );
-};
-
-const parsePrice = (value: string) => Number(value.replace(/[^0-9.]/g, ""));
-
-const formatPrice = (value: number) => `$${value.toFixed(2)}`;
 
 const DishFormRow = ({
   label,
@@ -92,20 +54,20 @@ const DishFormRow = ({
 
 export const FoodMenuContent = () => {
   const router = useRouter();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [foods, setFoods] = useState<Food[]>([]);
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [foods, setFoods] = useState<AdminFood[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [categoryName, setCategoryName] = useState("");
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(null);
   const [editCategoryName, setEditCategoryName] = useState("");
   const [deletingCategory, setDeletingCategory] = useState(false);
 
   const [foodDialogOpen, setFoodDialogOpen] = useState(false);
-  const [editingFood, setEditingFood] = useState<Food | null>(null);
+  const [editingFood, setEditingFood] = useState<AdminFood | null>(null);
   const [foodName, setFoodName] = useState("");
   const [foodPrice, setFoodPrice] = useState("");
   const [foodCategoryId, setFoodCategoryId] = useState("");
@@ -188,19 +150,11 @@ export const FoodMenuContent = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+
     try {
-      const [categoriesRes, foodsRes] = await Promise.all([
-        authRequest<{ categories: Category[] }>({
-          url: "/api/admin/categories",
-          method: "GET",
-        }),
-        authRequest<{ foods: Food[] }>({
-          url: "/api/admin/foods",
-          method: "GET",
-        }),
-      ]);
-      setCategories(categoriesRes.data.categories);
-      setFoods(foodsRes.data.foods);
+      const data = await fetchAdminMenuData();
+      setCategories(data.categories);
+      setFoods(data.foods);
     } catch (err) {
       if (handleAdminRequestError(err, router)) return;
       console.error("Failed to load admin menu:", err);
@@ -212,35 +166,22 @@ export const FoodMenuContent = () => {
   useEffect(() => {
     let cancelled = false;
 
-    const fetchData = async () => {
-      try {
-        const [categoriesRes, foodsRes] = await Promise.all([
-          authRequest<{ categories: Category[] }>({
-            url: "/api/admin/categories",
-            method: "GET",
-          }),
-          authRequest<{ foods: Food[] }>({
-            url: "/api/admin/foods",
-            method: "GET",
-          }),
-        ]);
-
+    fetchAdminMenuData()
+      .then((data) => {
         if (cancelled) return;
-
-        setCategories(categoriesRes.data.categories);
-        setFoods(foodsRes.data.foods);
-      } catch (err) {
+        setCategories(data.categories);
+        setFoods(data.foods);
+      })
+      .catch((err) => {
         if (cancelled) return;
         if (handleAdminRequestError(err, router)) return;
         console.error("Failed to load admin menu:", err);
-      } finally {
+      })
+      .finally(() => {
         if (!cancelled) {
           setLoading(false);
         }
-      }
-    };
-
-    void fetchData();
+      });
 
     return () => {
       cancelled = true;
@@ -264,11 +205,11 @@ export const FoodMenuContent = () => {
     setFoodDialogOpen(true);
   };
 
-  const openEditFoodDialog = (food: Food) => {
+  const openEditFoodDialog = (food: AdminFood) => {
     clearPendingImagePreview();
     setEditingFood(food);
     setFoodName(food.foodName);
-    setFoodPrice(formatPrice(food.price));
+    setFoodPrice(formatUsd(food.price));
     setFoodCategoryId(food.categoryId);
     setIngredients(food.ingredients);
     setSavedImageUrl(food.image);
@@ -287,7 +228,7 @@ export const FoodMenuContent = () => {
       });
       setCategoryDialogOpen(false);
       setCategoryName("");
-      showDishToast("New Category is being added to the menu");
+      showSuccessToast("New Category is being added to the menu");
       await loadData();
     } catch (err) {
       if (handleAdminRequestError(err, router)) return;
@@ -295,7 +236,7 @@ export const FoodMenuContent = () => {
     }
   };
 
-  const openEditCategoryDialog = (category: Category) => {
+  const openEditCategoryDialog = (category: AdminCategory) => {
     setEditingCategory(category);
     setEditCategoryName(category.categoryName);
     setEditCategoryDialogOpen(true);
@@ -317,7 +258,7 @@ export const FoodMenuContent = () => {
       });
       setEditCategoryDialogOpen(false);
       resetEditCategoryForm();
-      showDishToast("Category successfully updated.");
+      showSuccessToast("Category successfully updated.");
       await loadData();
     } catch (err) {
       if (handleAdminRequestError(err, router)) return;
@@ -341,7 +282,7 @@ export const FoodMenuContent = () => {
 
       setEditCategoryDialogOpen(false);
       resetEditCategoryForm();
-      showDishToast(
+      showSuccessToast(
         "Category successfully deleted.",
         "Would you like to undo this action?",
       );
@@ -354,7 +295,7 @@ export const FoodMenuContent = () => {
     }
   };
 
-  const handleReorderCategories = async (reorderedCategories: Category[]) => {
+  const handleReorderCategories = async (reorderedCategories: AdminCategory[]) => {
     const previousCategories = categories;
     setCategories(reorderedCategories);
 
@@ -377,7 +318,7 @@ export const FoodMenuContent = () => {
   const handleSaveFood = async () => {
     if (!foodName.trim() || !foodCategoryId || !foodPrice.trim()) return;
 
-    const price = parsePrice(foodPrice);
+    const price = parsePriceInput(foodPrice);
     if (Number.isNaN(price) || price <= 0) {
       toast.error("Please enter a valid price");
       return;
@@ -417,7 +358,7 @@ export const FoodMenuContent = () => {
             image: imageUrl,
           },
         });
-        showDishToast("Dish successfully updated.");
+        showSuccessToast("Dish successfully updated.");
       } else {
         await authRequest({
           url: "/api/admin/foods",
@@ -430,7 +371,7 @@ export const FoodMenuContent = () => {
             image: imageUrl,
           },
         });
-        showDishToast("New dish is being added to the menu");
+        showSuccessToast("New dish is being added to the menu");
       }
 
       setFoodDialogOpen(false);
@@ -458,7 +399,7 @@ export const FoodMenuContent = () => {
       });
       setFoodDialogOpen(false);
       resetFoodForm();
-      showDishToast(
+      showSuccessToast(
         "Dish successfully deleted.",
         "Would you like to undo this action?",
       );
@@ -583,7 +524,7 @@ export const FoodMenuContent = () => {
                           {food.foodName}
                         </span>
                         <span className="text-lg font-semibold text-[#09090B]">
-                          ${food.price.toFixed(2)}
+                          {formatUsd(food.price)}
                         </span>
                       </div>
                       <p className="line-clamp-2 text-sm font-normal text-[#71717A]">

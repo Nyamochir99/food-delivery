@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { authRequest } from "@/lib/auth-client";
 import { handleAdminRequestError } from "@/lib/admin-client";
+import { createDefaultDateRange } from "@/lib/date-utils";
+import { formatUsd } from "@/lib/format-price";
+import { ORDER_STATUS_OPTIONS } from "@/lib/order-queries";
 import {
   formatOrderDate,
   ORDER_STATUS_LABELS,
@@ -66,26 +69,6 @@ type OrdersResponse = {
   totalPages: number;
 };
 
-const STATUS_OPTIONS: FoodOrderStatus[] = ["DELIVERED", "PENDING", "CANCELED"];
-
-const formatInputDate = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const createDefaultDateRange = () => {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - 30);
-
-  return {
-    start: formatInputDate(start),
-    end: formatInputDate(end),
-  };
-};
-
 const DEFAULT_DATE_RANGE = createDefaultDateRange();
 
 type OrdersQuery = {
@@ -103,19 +86,11 @@ const requestOrders = (query: OrdersQuery) =>
     params: query,
   }).then((res) => res.data);
 
-type OrderFoodItem = {
-  quantity: number;
-  food: {
-    foodName: string;
-    image: string;
-  };
-};
-
 const OrderFoodItemsPopover = ({
   items,
   foodCount,
 }: {
-  items: OrderFoodItem[];
+  items: OrderItem[];
   foodCount: number;
 }) => (
   <Tooltip>
@@ -178,30 +153,25 @@ export const OrdersContent = () => {
   const [startDate, setStartDate] = useState(DEFAULT_DATE_RANGE.start);
   const [endDate, setEndDate] = useState(DEFAULT_DATE_RANGE.end);
 
-  const loadOrders = useCallback(
-    async (query: OrdersQuery, options?: { showLoading?: boolean }) => {
-      if (options?.showLoading ?? true) {
-        setLoading(true);
-      }
+  const loadOrders = useCallback(async (query: OrdersQuery) => {
+    setLoading(true);
 
-      try {
-        const data = await requestOrders(query);
+    try {
+      const data = await requestOrders(query);
 
-        setOrders(data.orders);
-        setTotal(data.total);
-        setTotalPages(data.totalPages);
-        setSelectedIds((current) =>
-          current.filter((id) => data.orders.some((order) => order.id === id)),
-        );
-      } catch (err) {
-        if (handleAdminRequestError(err, router)) return;
-        console.error("Failed to load orders:", err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [router],
-  );
+      setOrders(data.orders);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+      setSelectedIds((current) =>
+        current.filter((id) => data.orders.some((order) => order.id === id)),
+      );
+    } catch (err) {
+      if (handleAdminRequestError(err, router)) return;
+      console.error("Failed to load orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -505,7 +475,7 @@ export const OrdersContent = () => {
                           {formatOrderDate(order.createdAt)}
                         </td>
                         <td className="px-3 py-4 align-middle">
-                          ${order.totalPrice.toFixed(2)}
+                          {formatUsd(order.totalPrice)}
                         </td>
                         <td className="max-w-56 truncate px-3 py-4 align-middle">
                           {order.address}
@@ -525,7 +495,7 @@ export const OrdersContent = () => {
                               align="end"
                               className="min-w-36"
                             >
-                              {STATUS_OPTIONS.map((status) => (
+                              {ORDER_STATUS_OPTIONS.map((status) => (
                                 <DropdownMenuItem
                                   key={status}
                                   onClick={() =>
@@ -636,7 +606,7 @@ export const OrdersContent = () => {
             </DialogHeader>
 
             <div className="flex flex-wrap gap-3">
-              {STATUS_OPTIONS.map((status) => (
+              {ORDER_STATUS_OPTIONS.map((status) => (
                 <button
                   key={status}
                   type="button"
