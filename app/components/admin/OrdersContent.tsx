@@ -132,7 +132,7 @@ const OrderFoodItemsPopover = ({
       side="bottom"
       align="start"
       sideOffset={8}
-      className="w-72 max-w-72 border border-[#E4E4E7] bg-white p-0 text-[#09090B] shadow-xl [&>svg]:hidden"
+      className="w-72 max-w-72 border border-[#E4E4E7] bg-white p-0 text-[#09090B] shadow-xl"
     >
       <ScrollArea className="max-h-60">
         <div className="flex flex-col gap-3 p-3 pr-4">
@@ -190,9 +190,7 @@ export const OrdersContent = () => {
         setTotal(data.total);
         setTotalPages(data.totalPages);
         setSelectedIds((current) =>
-          current.filter((id) =>
-            data.orders.some((order) => order.id === id),
-          ),
+          current.filter((id) => data.orders.some((order) => order.id === id)),
         );
       } catch (err) {
         if (handleAdminRequestError(err, router)) return;

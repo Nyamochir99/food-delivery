@@ -1,10 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import { sendOtpEmail } from "@/lib/mail";
 import { getTestAccount } from "@/lib/test-auth";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const generateOtp = () => {
   return Math.floor(Math.random() * 900000) + 100000;
@@ -55,12 +53,15 @@ export const POST = async (req: NextRequest) => {
   }
 
   if (!testAccount) {
-    await resend.emails.send({
-      from: "noreply@resend.dev",
-      to: body.email,
-      subject: "Your OTP code",
-      html: `<p>OTP code: <strong>${otp}</strong></p>`,
-    });
+    try {
+      await sendOtpEmail(body.email, String(otp));
+    } catch (err) {
+      console.error("Failed to send OTP email:", err);
+      return NextResponse.json(
+        { message: "Failed to send verification email. Please try again." },
+        { status: 500 },
+      );
+    }
   }
 
   return NextResponse.json({
